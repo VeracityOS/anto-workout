@@ -1,0 +1,17 @@
+{
+  "name": "WOD Planner",
+  "short_name": "WOD",
+  "description": "Plan, visualise and log your strength + metcon workouts. Track weights, mark sessions complete, and see which muscles each workout hits.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f141b",
+  "theme_color": "#0f141b",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
