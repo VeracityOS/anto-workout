@@ -243,22 +243,60 @@ function seedWorkouts(){
     strength:{mainLift:main,scheme:[12,10,8,6,4,2],accessories:acc},
     metcon:{rounds,order:'any',movements:metMoves}});
   const A=(name,reps,unit)=>({name,reps,unit:unit||'reps'});
+  const ROBIN='Round-robin sit-ups (AbMat / decline weighted / side toe touch / cycle crunch)';
   return [
+    // ---- Shoulders / thruster ----
     sm('Thruster Day','Thruster',
       [A('Shoulder press',8),A('Lateral raises',8),A('Erg',10,'cal')],
       [A('Weighted cable crunches',10),A('Snatches',8),A('AbMat sit-ups',20),A('Run',200,'m')]),
-    sm('Clean Day','Clean',
+
+    // ---- Clean ----
+    sm('Clean Day — A','Clean',
       [A('Seated row',8),A('Lat pulldown',8),A('Burpees',5)],
       [A('Pull-ups',10),A('AbMat sit-ups',20),A('Run',200,'m')]),
+    sm('Clean Day — B','Clean',
+      [A('Seated row',8),A('Lat pulldown',8),A('Burpees',5)],
+      [A('Weighted cable crunches',10),A('Renegade rows',8),A('Pull-ups',8),A('AbMat sit-ups',20),A('Run',200,'m')]),
+    sm('Clean Day — C','Clean',
+      [A('Seated row',8),A('Lat pulldown',8),A('Burpees',8)],
+      [A('Assault bike',12,'cal'),A('Renegade rows',8),A('Pull-ups',8),A('Ab roll-outs',8)]),
+
+    // ---- Back squat ----
     sm('Back Squat Day','Back squat',
       [A('Walking lunge (DB, 4/leg)',8),A('Hamstring curl (machine)',8),A('Skips',60)],
-      [A('Round-robin sit-ups (AbMat / decline weighted / side toe touch / cycle crunch)',20),A('Wall DB press / thruster',10),A('Bodyweight lunge (5/side)',10),A('Run',200,'m')]),
-    sm('Push Press Day','Push press',
+      [A(ROBIN,20),A('Wall DB press / thruster',10),A('Bodyweight lunge (5/side)',10),A('Run',200,'m')]),
+
+    // ---- Push press ----
+    sm('Push Press Day — A','Push press',
       [A('Chest press',8),A('Cable fly + biceps',8),A('Assault bike',8,'cal')],
       [A('Toes-to-bar',10),A('Dips',10),A('Cable crunches',10),A('Run',200,'m')]),
-    sm('Leg Press Day','Leg press',
-      [A('Hamstring curl',8),A('Bulgarian lunges (per leg)',8),A('Skips',60)],
-      [A('Toes-to-bar',10),A('Ab roll-outs',10),A('AbMat sit-up / ankle crunch',10),A('Run / Row / Bike',200,'m')]),
+    sm('Push Press Day — B','Push press',
+      [A('Chest press',8),A('Cable fly + biceps',8),A('Dips',8),A('Erg',10,'cal')],
+      [A('Toes-to-bar',10),A('Burpees',5),A('Cable crunches',10),A('DB man makers',3),A('Run',200,'m')]),
+
+    // ---- Leg press ----
+    sm('Leg Press Day — A','Leg press',
+      [A('Hamstring curl',8),A('Lunges',8),A('Skips',60)],
+      [A('Toes-to-bar',10),A('Ab roll-outs',10),A('DB thrusters',10),A('Weighted cable crunches',10),A('Run / Row / Bike',200,'m')]),
+    sm('Leg Press Day — B','Leg press',
+      [A('Bulgarian split squats',8),A('Box jumps',8),A('Skips',60)],
+      [A(ROBIN,20),A('Wall DB press / thruster',10),A('Toes-to-bar',10),A('Run',200,'m')]),
+    sm('Leg Press Day — C','Leg press',
+      [A('Leg raises',8),A('Bulgarian split squats',8),A('Skips',60)],
+      [A('Toes-to-bar',10),A('Weighted sit-ups',10),A('DB thrusters',10),A('Weighted cable crunches',10),A('Run / Row / Bike',200,'m')]),
+
+    // ---- Ladder days (rounds not stated in source; 4 assumed) ----
+    sm('Deadlift Day','Deadlift',
+      [A('Hamstring curl (machine)',8),A('Hip raises (plate or barbell)',8),A('Burpees',10)],
+      [A('Run',200,'m'),A('Box jumps',10),A('Cossack squats',8),A('Mountain climbers',20)]),
+    sm('Overhead Press Day','Overhead press',
+      [A('DB snatches (4/arm)',8),A('Shoulder press machine (light)',8),A('American KB swings',10)],
+      [A('Run',200,'m'),A('DB snatches (lighter)',10),A('Dips',8),A('Ab roll-outs',8)]),
+    sm('Bench Press Day','Bench press',
+      [A('Tricep dips',8),A('Cable flys',8),A('Burpees',8)],
+      [A('Assault bike',12,'cal'),A('Press-ups',10),A('DB clean and jerk',8),A('Sit-ups (vary each round)',20)]),
+
+    // ---- Ladder ----
     {id:uid(),name:'21-15-9 Burner',type:'ladder',
       ladder:{scheme:[21,15,9],
         movements:[A('Thruster',0),A('Pull-ups',0),A('KB swings',0),A('AbMat sit-ups',0),A('Burpees',0)],
@@ -502,7 +540,7 @@ const RULES=[
   {kw:['push press','overhead press','shoulder press','strict press','military','ohp'],m:['shoulders','triceps']},
   {kw:['lateral raise','later raise','side raise'],m:['shoulders']},
   {kw:['rear delt','reverse fly'],m:['shoulders','traps']},
-  {kw:['chest press','bench','push up','push-up','press up','dip'],m:['chest','triceps','shoulders']},
+  {kw:['chest press','bench','push up','push-up','press up','press-up','dip'],m:['chest','triceps','shoulders']},
   {kw:['cable fly','pec fly','fly','pec deck','chest fly'],m:['chest']},
   {kw:['bicep','curl','chin'],m:['biceps','forearms']},
   {kw:['tricep','pushdown','skull','kickback'],m:['triceps']},
@@ -516,6 +554,11 @@ const RULES=[
   {kw:['oblique','side','russian twist','cycle crunch','bicycle','toe touch','wood chop'],m:['obliques','abs']},
   {kw:['roll out','rollout','plank','hollow','dead bug','leg raise','v-up','v up'],m:['abs']},
   {kw:['crunch','sit-up','situp','sit up','ab '],m:['abs']},
+  {kw:['box jump'],m:['quads','glutes','calves'],c:true},
+  {kw:['cossack'],m:['quads','glutes','hamstrings']},
+  {kw:['mountain climber'],m:['abs','shoulders','quads'],c:true},
+  {kw:['man maker'],m:['chest','shoulders','quads','abs','lats'],c:true},
+  {kw:['hip raise'],m:['glutes','hamstrings','lowerback']},
   {kw:['burpee'],m:['quads','chest','abs','shoulders'],c:true},
   {kw:['run','sprint','jog'],m:['quads','hamstrings','calves'],c:true},
   {kw:['assault','bike','row /','/ row','/ bike','cardio','ski'],m:['quads'],c:true},
