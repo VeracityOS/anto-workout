@@ -86,6 +86,20 @@ header.top{position:sticky;top:0;z-index:30;background:linear-gradient(180deg,va
 .fab svg{width:28px;height:28px}
 
 /* Bottom nav */
+/* --- Return to Training --- */
+.rbar{height:8px;border-radius:999px;background:var(--elev);overflow:hidden;margin:9px 0 3px}
+.rbar i{display:block;height:100%;background:linear-gradient(90deg,var(--orange),var(--amber));border-radius:999px;transition:width .3s}
+.card.warn{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.32)}
+.card.ok{background:rgba(34,197,94,.07);border-color:rgba(34,197,94,.28)}
+.ssum{display:flex;align-items:center;gap:11px;cursor:pointer;user-select:none}
+.ssum .chev2{margin-left:auto;color:var(--faint);flex:0 0 auto;transition:transform .18s}
+.ssum.open .chev2{transform:rotate(90deg)}
+.kv{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.kv:last-child{border-bottom:none}
+.kv .r{color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.wkstep{display:flex;align-items:center;gap:10px;justify-content:center;margin-top:4px}
+.wkstep button{width:36px;height:36px;border-radius:10px;background:var(--elev);border:1px solid var(--line);color:var(--muted);font-size:19px;line-height:1}
+.wkstep b{font-family:'Barlow Condensed';font-size:19px;letter-spacing:.5px;min-width:112px;text-align:center}
 nav.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:40;display:flex;
   background:rgba(15,20,27,.92);backdrop-filter:blur(14px);border-top:1px solid var(--line);
   padding-bottom:env(safe-area-inset-bottom)}
@@ -206,6 +220,7 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
 <nav class="tabbar" id="tabbar">
   <a href="#/" data-tab="home"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M4 12h16M4 17h10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Workouts</a>
   <a href="#/plan" data-tab="plan"><svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="4.5" width="17" height="16" rx="2.5" stroke="currentColor" stroke-width="2"/><path d="M3.5 9h17M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Plan</a>
+  <a href="#/return" data-tab="return"><svg viewBox="0 0 24 24" fill="none"><path d="M2.5 12.5h4l2-5 3.5 9 2.5-6 1.8 2h5.2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Return</a>
   <a href="#/history" data-tab="history"><svg viewBox="0 0 24 24" fill="none"><path d="M12 7v5l3 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="2"/></svg>History</a>
 </nav>
 
@@ -220,6 +235,7 @@ function save(){localStorage.setItem(KEY,JSON.stringify(S))}
 let S=load();
 if(!S){ S={workouts:seedWorkouts(),plan:{},history:[],prefs:{unit:'kg'}}; save(); }
 if(!S.prefs) S.prefs={unit:'kg'};
+if(!S.ret) S.ret={started:null,done:{},kipPU:true,kipTTB:false,weekOffset:0};
 
 //==================== SEED ====================
 function seedWorkouts(){
@@ -248,6 +264,225 @@ function seedWorkouts(){
         movements:[A('Thruster',0),A('Pull-ups',0),A('KB swings',0),A('AbMat sit-ups',0),A('Burpees',0)],
         finisher:'200m run'}}
   ];
+}
+
+//==================== RETURN TO TRAINING ====================
+// Six-week graded on-ramp after PFO closure. 20-minute sessions.
+// Movement names carry {PU}/{TTB} markers resolved against the kipping toggles.
+const RA=(name,reps,unit)=>({name,reps,unit:unit||'reps'});
+const rs=(key,name,focus,main,scheme,acc,rounds,moves)=>({key,name,focus,type:'sm',
+  strength:{mainLift:main,scheme,accessories:acc},metcon:{rounds,order:'any',movements:moves}});
+
+const RET_BLOCKS=[
+ {id:'b1',name:'Re-entry',weeks:'Weeks 1–2',rpe:6,freq:3,
+  cue:'Should feel almost too easy. Nothing to failure, nothing scored for time — you should be able to speak a full sentence throughout.',
+  pull:'Dead hangs 60–90s total · scap pull-ups · sets of 5 kipping, only while fresh',
+  ttb:'Dead bugs · hollow holds · hanging knee raises — strict only',
+  sessions:[
+   rs('b1a','Legs + Core','Legs','Goblet squat',[10,10,10],
+      [RA('DB split squat (8/leg)',8),RA('Hamstring curl',10)],
+      3,[RA('Air squats',10),RA('Dead bugs',20),RA('Dead hang',30,'s'),RA('Row (easy)',200,'m')]),
+   rs('b1b','Push + Core','Push','DB shoulder press',[10,10,10],
+      [RA('Push-ups (incline if needed)',8),RA('Lateral raises',10)],
+      3,[RA('Push-ups',10),RA('Hollow hold',30,'s'),RA('Assault bike (easy)',10,'cal')]),
+   rs('b1c','Pull + Core','Pull','Lat pulldown',[10,10,10],
+      [RA('Seated row',10),RA('Scap pull-ups',8)],
+      3,[RA('{PU}',5),RA('Hanging knee raises',10),RA('Run (easy)',200,'m')]),
+  ]},
+ {id:'b2',name:'Load On',weeks:'Weeks 3–4',rpe:7,freq:4,
+  cue:'Load goes on and negatives start. Still stopping two reps short of failure on every set.',
+  pull:'3–5s negatives · sets of 5 kipping · strict triples',
+  ttb:'Knees-to-elbow · first strict toes-to-bar singles',
+  sessions:[
+   rs('b2a','Legs','Legs','Back squat',[8,8,8,8],
+      [RA('Walking lunge (DB, 4/leg)',8),RA('Hamstring curl',10)],
+      4,[RA('Goblet squat',10),RA('KB swings (light)',10),RA('Run',200,'m')]),
+   rs('b2b','Push','Push','Push press',[8,8,8,8],
+      [RA('Chest press',10),RA('Dips',6)],
+      4,[RA('Push-ups',8),RA('Cable crunches',10),RA('Assault bike',8,'cal')]),
+   rs('b2c','Pull','Pull','Pull-ups',[5,5,5,5],
+      [RA('Seated row',10),RA('Lat pulldown',10)],
+      4,[RA('{PU}',5),RA('Knees-to-elbow',8),RA('Row',200,'m')]),
+   rs('b2d','Core + Engine','Core','Weighted cable crunches',[10,10,10,10],
+      [RA('Ab roll-outs',8),RA('Hollow hold',30,'s')],
+      4,[RA('AbMat sit-ups',10),RA('Knees-to-elbow',8),RA('Run',200,'m')]),
+  ]},
+ {id:'b3',name:'Back To It','weeks':'Weeks 5–6',rpe:8,freq:4,
+  cue:'RPE 8 on the strength work, conditioning still submaximal. Week 7 you are back on your normal 45-minute sessions.',
+  pull:'Strict sets of 5 · kipping sets of 5–8 · still never to failure',
+  ttb:'Strict toes-to-bar in singles and doubles',
+  sessions:[
+   rs('b3a','Legs','Legs','Back squat',[5,5,5,5,5],
+      [RA('DB split squat (8/leg)',8),RA('Hamstring curl',10)],
+      4,[RA('Thrusters (light)',10),RA('Bodyweight lunge (5/side)',10),RA('Run',200,'m')]),
+   rs('b3b','Push','Push','Push press',[5,5,5,5,5],
+      [RA('Shoulder press',8),RA('Dips',8)],
+      4,[RA('DB thrusters',10),RA('Push-ups',10),RA('Assault bike',8,'cal')]),
+   rs('b3c','Pull','Pull','Pull-ups',[5,5,5,5,5],
+      [RA('Lat pulldown',10),RA('Seated row',10)],
+      4,[RA('{PU}',5),RA('{TTB}',5),RA('Run',200,'m')]),
+   {key:'b3d',name:'21-15-9 Lite',focus:'Mixed',type:'ladder',
+    ladder:{scheme:[21,15,9],
+      movements:[RA('Air squats',0),RA('KB swings',0),RA('AbMat sit-ups',0),RA('Burpees',0)],
+      finisher:'200m run'}},
+  ]},
+];
+
+const RET_STOP=['Palpitations or an irregular heartbeat','Chest pain or pressure',
+  'Breathlessness out of proportion to the effort','Dizziness or feeling faint'];
+
+function retName(n){
+  return String(n).replace('{PU}', S.ret.kipPU?'Kipping pull-ups':'Strict pull-ups')
+                  .replace('{TTB}', S.ret.kipTTB?'Kipping toes-to-bar':'Strict toes-to-bar');
+}
+function retWeek(){
+  if(!S.ret.started) return 0;
+  const days=Math.floor((Date.now()-new Date(S.ret.started).getTime())/864e5);
+  return Math.min(7,Math.max(1,Math.floor(days/7)+1+(S.ret.weekOffset||0)));
+}
+function retBlockIdx(){const w=retWeek();return w<=2?0:w<=4?1:2}
+function retTotalSessions(){return RET_BLOCKS.reduce((n,b)=>n+b.sessions.length*2,0)}
+function retDoneCount(){return Object.values(S.ret.done).filter(Boolean).length}
+
+let retOpen={};
+function retToggle(k){retOpen[k]=!retOpen[k];returnView()}
+function retStart(){S.ret.started=new Date().toISOString();S.ret.weekOffset=0;save();returnView();toast('Week 1 — go steady')}
+function retShiftWeek(d){
+  const w=retWeek(); if((w<=1&&d<0)||(w>=7&&d>0))return;
+  S.ret.weekOffset=(S.ret.weekOffset||0)+d;save();retOpen={};returnView();
+}
+function retTick(key){
+  const w=retWeek(), id=key+'-w'+w;
+  S.ret.done[id]=!S.ret.done[id];save();returnView();
+  if(S.ret.done[id]) toast('Logged ✓');
+}
+function retKip(which){
+  if(which==='pu') S.ret.kipPU=!S.ret.kipPU; else S.ret.kipTTB=!S.ret.kipTTB;
+  save();returnView();
+}
+function retAdd(key){
+  const sess=RET_BLOCKS.flatMap(b=>b.sessions).find(x=>x.key===key);
+  if(!sess) return;
+  const w={id:uid(),name:sess.name+' (Return)',type:sess.type};
+  if(sess.type==='ladder'){
+    w.ladder={scheme:[...sess.ladder.scheme],
+      movements:sess.ladder.movements.map(m=>({...m,name:retName(m.name)})),
+      finisher:sess.ladder.finisher};
+  } else {
+    w.strength={mainLift:retName(sess.strength.mainLift),scheme:[...sess.strength.scheme],
+      accessories:sess.strength.accessories.map(m=>({...m,name:retName(m.name)}))};
+    w.metcon={rounds:sess.metcon.rounds,order:sess.metcon.order,
+      movements:sess.metcon.movements.map(m=>({...m,name:retName(m.name)}))};
+  }
+  S.workouts.push(w);save();toast('Added to Workouts');
+}
+function retSessionCard(sess,blk){
+  const w=retWeek(), id=sess.key+'-w'+w, done=!!S.ret.done[id], open=!!retOpen[sess.key];
+  const isL=sess.type==='ladder';
+  const meta = isL
+    ? `${sess.ladder.scheme.join('-')} · ${sess.ladder.movements.length} moves`
+    : `${retName(sess.strength.mainLift)} · ${sess.strength.scheme.length}×${sess.strength.scheme[0]} · ${sess.metcon.rounds} rounds`;
+  let body='';
+  if(open){
+    if(isL){
+      body=`<div style="margin-top:12px">
+        <div class="section-h"><span class="k">Rep Ladder</span><span class="ln"></span></div>
+        ${sess.ladder.movements.map(m=>`<div class="kv"><span>${esc(retName(m.name))}</span><span class="r">${sess.ladder.scheme.join(' / ')}</span></div>`).join('')}
+        <div class="kv"><span class="muted">Finisher</span><span class="r">${esc(sess.ladder.finisher)}</span></div>
+      </div>`;
+    } else {
+      body=`<div style="margin-top:12px">
+        <div class="section-h"><span class="k">Strength · ~8 min</span><span class="ln"></span></div>
+        <div class="kv"><span><b>${esc(retName(sess.strength.mainLift))}</b></span><span class="r">${sess.strength.scheme.length}×${sess.strength.scheme[0]}</span></div>
+        ${sess.strength.accessories.map(a=>`<div class="kv"><span>${esc(retName(a.name))}</span><span class="r">${a.reps} ${esc(a.unit)}</span></div>`).join('')}
+        <div class="section-h"><span class="k">Conditioning · ~10 min · ${sess.metcon.rounds} rounds</span><span class="ln"></span></div>
+        ${sess.metcon.movements.map(m=>`<div class="kv"><span>${esc(retName(m.name))}</span><span class="r">${m.reps} ${esc(m.unit)}</span></div>`).join('')}
+      </div>`;
+    }
+    body+=`<button class="btn ghost sm block" style="margin-top:12px" onclick="event.stopPropagation();retAdd('${sess.key}')">Add to Workouts</button>`;
+  }
+  return `<div class="card${done?' ok':''}">
+    <div class="ssum${open?' open':''}" onclick="retToggle('${sess.key}')">
+      <div class="check" style="${done?'background:var(--green);border-color:var(--green);color:#04230f':''};display:grid;place-items:center;font-weight:800"
+           onclick="event.stopPropagation();retTick('${sess.key}')">${done?'✓':''}</div>
+      <div style="min-width:0">
+        <h3>${esc(sess.name)}</h3>
+        <div class="muted" style="font-size:13px">${esc(meta)}</div>
+      </div>
+      <span class="tag${done?' g':''}">${esc(sess.focus)}</span>
+      <svg class="chev2" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>${body}</div>`;
+}
+function returnView(){
+  if(!S.ret.started){
+    app.innerHTML=`<h2>Return to Training</h2>
+      <p class="muted" style="font-size:14.5px;margin-top:-2px">A six-week graded on-ramp back to full sessions. Three to four 20-minute workouts a week, on top of 8–10 minutes of mobility.</p>
+      <div class="card">
+        <div class="section-h" style="margin-top:0"><span class="k">How it runs</span><span class="ln"></span></div>
+        <div class="kv"><span>Weeks 1–2 · Re-entry</span><span class="r">RPE 6 · 3×/wk</span></div>
+        <div class="kv"><span>Weeks 3–4 · Load On</span><span class="r">RPE 7 · 4×/wk</span></div>
+        <div class="kv"><span>Weeks 5–6 · Back To It</span><span class="r">RPE 8 · 4×/wk</span></div>
+        <div class="kv"><span>Week 7</span><span class="r">Normal 45-min sessions</span></div>
+      </div>
+      <p class="muted" style="font-size:13.5px">Your strength and engine come back in 2–4 weeks. Tendon and connective tissue takes 2–3 months — that gap is what the ramp is protecting.</p>
+      <button class="btn primary block" style="margin-top:14px" onclick="retStart()">Start Week 1</button>`;
+    return;
+  }
+  const w=retWeek(), bi=retBlockIdx(), b=RET_BLOCKS[bi];
+  const done=retDoneCount(), tot=retTotalSessions();
+  let html=`<h2>Return to Training</h2>
+    <div class="wkstep">
+      <button onclick="retShiftWeek(-1)" aria-label="Previous week">‹</button>
+      <b>${w>6?'WEEK 7+':'WEEK '+w+' OF 6'}</b>
+      <button onclick="retShiftWeek(1)" aria-label="Next week">›</button>
+    </div>
+    <div class="rbar"><i style="width:${Math.round(done/tot*100)}%"></i></div>
+    <div class="statline" style="margin:0 0 4px"><span class="faint" style="font-size:12.5px">${done} of ${tot} sessions logged</span></div>`;
+
+  if(w>6){
+    html+=`<div class="card ok"><h3>Ramp complete</h3>
+      <p class="muted" style="font-size:14px;margin:6px 0 0">You're through the on-ramp — back to your normal 45-minute strength and conditioning. Keep the 8–10 minute mobility and the dead hangs; they were doing more than you think.</p></div>`;
+  }
+
+  html+=`<div class="card">
+    <div class="ssum" style="cursor:default"><h3>Block ${bi+1} · ${esc(b.name)}</h3><span class="tag hot" style="margin-left:auto">RPE ${b.rpe} cap</span></div>
+    <div class="muted" style="font-size:13px;margin-top:2px">${esc(b.weeks)} · ${b.freq} sessions a week</div>
+    <p style="font-size:14.5px;margin:10px 0 0">${esc(b.cue)}</p>
+  </div>
+
+  <div class="section-h"><span class="k">Mobility · 8–10 min, before every session</span><span class="ln"></span></div>
+  <div class="card">
+    <div class="kv"><span>Easy bike or row</span><span class="r">2 min</span></div>
+    <div class="kv"><span>Hips &amp; ankles — 90/90, couch stretch, ankle rocks</span><span class="r">2 min</span></div>
+    <div class="kv"><span>T-spine &amp; shoulders — open books, wall slides</span><span class="r">2 min</span></div>
+    <div class="kv"><span><b>Dead hang</b> — 2 × 20–30s</span><span class="r">2 min</span></div>
+    <div class="kv"><span>Core switch-on — dead bugs, hollow hold</span><span class="r">1–2 min</span></div>
+  </div>
+
+  <div class="section-h"><span class="k">This block's ladders</span><span class="ln"></span></div>
+  <div class="card">
+    <div class="kv"><span><b>Pull-ups</b><br><span class="muted" style="font-size:13.5px">${esc(b.pull)}</span></span></div>
+    <div class="kv"><span><b>Toes-to-bar</b><br><span class="muted" style="font-size:13.5px">${esc(b.ttb)}</span></span></div>
+  </div>
+
+  <div class="section-h"><span class="k">Sessions · 20 min each</span><span class="ln"></span></div>
+  ${b.sessions.map(sx=>retSessionCard(sx,b)).join('')}
+
+  <div class="section-h"><span class="k">Kipping</span><span class="ln"></span></div>
+  <div class="card">
+    <div class="kv"><span>Kipping pull-ups<br><span class="muted" style="font-size:13px">Sets of 5. Stop the set the moment the kip gets scrappy.</span></span>
+      <button class="btn sm ${S.ret.kipPU?'go':'ghost'}" onclick="retKip('pu')">${S.ret.kipPU?'On':'Off'}</button></div>
+    <div class="kv"><span>Kipping toes-to-bar<br><span class="muted" style="font-size:13px">Suggested from week 3 — the deep core is the deconditioned bit, not your lats.</span></span>
+      <button class="btn sm ${S.ret.kipTTB?'go':'ghost'}" onclick="retKip('ttb')">${S.ret.kipTTB?'On':'Off'}</button></div>
+  </div>
+
+  <div class="card warn">
+    <h3 style="color:#fca5a5">Stop the session for</h3>
+    ${RET_STOP.map(x=>`<div class="kv"><span>${esc(x)}</span></div>`).join('')}
+    <p class="muted" style="font-size:13.5px;margin:10px 0 0">Don't finish the round — stop, and ring your cardiologist.</p>
+  </div>
+  <p class="faint" style="font-size:12.5px;text-align:center;margin-top:16px">Guidance, not medical advice. Your cardiologist's instructions win.</p>`;
+  app.innerHTML=html;
 }
 
 //==================== MUSCLE ENGINE ====================
@@ -388,7 +623,7 @@ function render(){
   const route=parts[0]||'';
   document.querySelectorAll('nav.tabbar a').forEach(a=>a.classList.remove('active'));
   $('#fab').style.display = (route===''||route==='plan'||route==='history')?'grid':'none';
-  let tab=route===''?'home':route==='plan'?'plan':route==='history'?'history':null;
+  let tab=route===''?'home':route==='plan'?'plan':route==='history'?'history':route==='return'?'return':null;
   if(tab) document.querySelector(`nav.tabbar a[data-tab="${tab}"]`)?.classList.add('active');
   window.scrollTo(0,0);
   if(route===''){homeView()}
@@ -398,6 +633,7 @@ function render(){
   else if(route==='do'){sessionView(parts[1])}
   else if(route==='plan'){planView()}
   else if(route==='history'){historyView()}
+  else if(route==='return'){returnView()}
   else if(route==='settings'){settingsView()}
   else{homeView()}
   setStreak();

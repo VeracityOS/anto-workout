@@ -1,5 +1,5 @@
 // WOD Planner — offline-first service worker
-const CACHE = 'wod-v4';
+const CACHE = 'wod-v5';
 const ASSETS = [
   './',
   './index.html',
