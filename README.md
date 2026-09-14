@@ -33,3 +33,30 @@ python3 -m http.server 8000
 A bad cached copy therefore persists until site data is cleared. Bump the
 `CACHE` constant when shipping changes, or the update will not reach devices
 that already have the app installed.
+
+## Deployment
+
+Deployed on Vercel as the project `workouts`, served at
+https://workouts-lemon.vercel.app
+
+Static site — no build step. Vercel settings should be:
+
+| Setting | Value |
+|---|---|
+| Framework preset | Other |
+| Build command | *(none)* |
+| Output directory | *(repo root)* |
+| Production branch | `main` |
+
+Every push to `main` triggers a production deploy.
+
+Note that deployments created before this repository was connected (the
+original drag-and-drop upload) are not built from this source. Redeploying
+or rolling back to one of those serves the old uploaded files, not the
+code here.
+
+### After deploying
+
+`service-worker.js` is cache-first, so bump the `CACHE` constant on any
+change to `index.html` or the assets — otherwise devices that already have
+the app installed keep serving the cached copy and never see the update.
