@@ -231,7 +231,55 @@ hr.sep{border:none;border-top:1px solid var(--line);margin:16px 0}
 const KEY='wodplanner.v1';
 const uid=()=>Math.random().toString(36).slice(2,9);
 function load(){try{return JSON.parse(localStorage.getItem(KEY))||null}catch(e){return null}}
-function save(){localStorage.setItem(KEY,JSON.stringify(S))}
+function save(){localStorage.setItem(KEY,JSON.stringify(S));pushSync()}
+
+//==================== CLOUD BACKUP ====================
+// Every save is pushed to the health hub, so sessions show up in 360 Me and
+// survive a cleared browser. Off until this device is given the key, by opening
+// #/sync/<key> once. Works offline: a failed push is retried on the next save
+// or when the connection returns.
+const SYNC_URL='https://djeddxqmnvbuxevyolqw.supabase.co/functions/v1/workout-sync';
+const SYNC_KEY='wodplanner.syncKey', SYNC_STATE='wodplanner.syncState';
+let syncTimer=null;
+const syncKey=()=>localStorage.getItem(SYNC_KEY)||'';
+function syncNote(s){localStorage.setItem(SYNC_STATE,JSON.stringify({s,at:Date.now()}));if(location.hash==='#/settings')settingsView()}
+function pushSync(now){
+  if(!syncKey())return;
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(()=>{
+    fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'application/json','x-hub-secret':syncKey()},body:JSON.stringify(S)})
+      .then(r=>syncNote(r.ok?'ok':r.status===409?'needs-restore':r.status===401?'bad-key':'error'))
+      .catch(()=>syncNote('offline'));
+  },now?0:1500);
+}
+window.addEventListener('online',()=>pushSync(true));
+function syncLabel(){
+  if(!syncKey())return 'Off &middot; open your sync link on this device to turn it on';
+  let st=null;try{st=JSON.parse(localStorage.getItem(SYNC_STATE))}catch(e){}
+  const when=st?new Date(st.at).toLocaleString('en',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+  if(!st)return 'On &middot; nothing saved yet';
+  if(st.s==='ok')return 'On &middot; last saved <b>'+when+'</b>';
+  if(st.s==='offline')return 'On &middot; waiting for a connection';
+  if(st.s==='needs-restore')return 'Paused &middot; this device has no sessions and the backup does. Restore first.';
+  if(st.s==='bad-key')return 'Off &middot; the sync key was rejected. Open your sync link again.';
+  return 'On &middot; last save failed ('+when+')';
+}
+function linkSync(key){
+  if(key){localStorage.setItem(SYNC_KEY,key);localStorage.removeItem(SYNC_STATE);pushSync(true);toast('Cloud backup on')}
+  // Take the key out of the address bar and the back button's history.
+  history.replaceState(null,'','#/settings');
+  settingsView();
+}
+async function pullSync(){
+  let r;
+  try{r=await fetch(SYNC_URL,{headers:{'x-hub-secret':syncKey()}})}catch(e){return toast('No connection')}
+  if(!r.ok)return toast('Could not read the backup');
+  const b=await r.json();
+  if(!b.data||!Array.isArray(b.data.workouts))return toast('No backup stored yet');
+  if(!confirm('Replace what is on this device ('+S.history.length+' sessions) with the backup ('+(b.data.history||[]).length+' sessions)?'))return;
+  S=Object.assign({workouts:[],plan:{},history:[],prefs:{unit:'kg'}},b.data);
+  localStorage.setItem(KEY,JSON.stringify(S));syncNote('ok');toast('Restored from backup');go('#/');
+}
 let S=load();
 if(!S){ S={workouts:seedWorkouts(),plan:{},history:[],prefs:{unit:'kg'}}; save(); }
 if(!S.prefs) S.prefs={unit:'kg'};
@@ -678,6 +726,7 @@ function render(){
   else if(route==='history'){historyView()}
   else if(route==='return'){returnView()}
   else if(route==='settings'){settingsView()}
+  else if(route==='sync'){linkSync(parts[1])}
   else{homeView()}
   setStreak();
 }
@@ -983,7 +1032,11 @@ function settingsView(){
   <button class="btn ghost block" style="margin-top:10px" onclick="exportData()">Export data (backup)</button>
   <button class="btn ghost block" style="margin-top:10px" onclick="importData()">Import data (restore)</button>
   <button class="btn danger block" style="margin-top:10px" onclick="resetData()">Reset to default workouts</button>
-  <p class="faint" style="font-size:12.5px;text-align:center;margin-top:18px">WOD Planner · offline · data stored on this device</p>`;
+  <hr class="sep">
+  <div class="section-h"><span class="k">Cloud Backup</span><span class="ln"></span></div>
+  <div class="card"><div class="statline" style="margin:0"><span>${syncLabel()}</span></div></div>
+  ${syncKey()?`<button class="btn ghost block" style="margin-top:10px" onclick="pullSync()">Restore from cloud backup</button>`:''}
+  <p class="faint" style="font-size:12.5px;text-align:center;margin-top:18px">WOD Planner · offline · ${syncKey()?'backed up to the cloud':'data stored on this device'}</p>`;
   app.innerHTML=html;
 }
 function setUnit(x){S.prefs.unit=x;save();settingsView();toast('Unit set to '+x)}
